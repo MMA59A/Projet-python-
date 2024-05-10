@@ -1,0 +1,81 @@
+import random
+
+class Case:
+    def __init__(self, x, y):
+        self.x = x
+        self.y = y
+    
+    def __str__(self):
+        return f"({self.x}, {self.y})"
+    
+    def __eq__(self, other):
+        return self.x == other.x and self.y == other.y
+    
+    def adjacentes(self, jeu):
+        adjacent_cases = []
+        for i in range(self.x - 1, self.x + 2):
+            for j in range(self.y - 1, self.y + 2):
+                if (i, j) != (self.x, self.y) and 0 <= i < len(jeu.listeDesCases) and 0 <= j < len(jeu.listeDesCases[0]):
+                    adjacent_cases.append(jeu.listeDesCases[i][j])
+        return adjacent_cases
+
+class Creature:
+    def __init__(self, nom, position):
+        self.nom = nom
+        self.position = position
+    
+    def __str__(self):
+        return f"{self.nom} à la position {self.position}"
+    
+    def choisirCible(self, jeu):
+        cases_adjacentes = self.position.adjacentes(jeu)
+        cases_occupees = [case for case in cases_adjacentes if jeu.estOccupee(case)]
+        if cases_occupees:
+            return random.choice(cases_occupees)
+        else:
+            return random.choice(cases_adjacentes)
+    
+class Jeu:
+    def __init__(self, taille):
+        self.listeDesCases = [[Case(x, y) for y in range(taille)] for x in range(taille)]
+        self.listeDesCreatures = []
+        self.tour = 0
+        self.actif = None
+    
+    def __str__(self):
+        return f"Tour {self.tour}, Actif: {self.actif}"
+    
+    def estOccupee(self, case):
+        for creature in self.listeDesCreatures:
+            if creature.position == case:
+                return True
+        return False
+    
+    def deplacer(self, creature, case):
+        if self.actif is None:
+            self.actif = creature
+        if case in creature.position.adjacentes(self):
+            if self.estOccupee(case):
+                print(f"{creature.nom} a capturé la case occupée par {self.actif.nom} et a gagné !")
+                return
+            else:
+                creature.position = case
+                self.tour += 1
+                self.actif = next((c for c in self.listeDesCreatures if c != creature), None)
+                print(self)
+        else:
+            print("Mouvement invalide")
+
+# Initialisation du jeu
+jeu = Jeu(4)
+creature1 = Creature("Creature 1", jeu.listeDesCases[0][0])
+creature2 = Creature("Creature 2", jeu.listeDesCases[3][3])
+jeu.listeDesCreatures = [creature1, creature2]
+
+# Déroulement du jeu
+while True:
+    if jeu.actif:
+        cible = jeu.actif.choisirCible(jeu)
+        jeu.deplacer(jeu.actif, cible)
+        if not jeu.actif:
+            break
